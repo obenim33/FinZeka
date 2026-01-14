@@ -430,19 +430,84 @@ body {
 }
 
 /* Responsive */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
     .app-container {
         grid-template-columns: 1fr;
     }
 
     .sidebar {
-        display: none;
-        /* In a real app, use a hamburger menu */
+        position: fixed;
+        left: -280px;
+        top: 0;
+        bottom: 0;
+        width: 280px;
+        z-index: 1000;
+        transition: left 0.3s ease;
+        border-right: 1px solid var(--glass-border);
     }
 
-    .comparison-grid {
-        grid-template-columns: 1fr;
+    .sidebar.mobile-active {
+        left: 0;
+        box-shadow: 20px 0 50px rgba(0, 0, 0, 0.5);
     }
+
+    .mobile-menu-trigger {
+        display: block !important;
+        font-size: 1.5rem;
+        cursor: pointer;
+        margin-right: 1rem;
+    }
+
+    .mobile-close {
+        display: block !important;
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        font-size: 1.5rem;
+        cursor: pointer;
+        opacity: 0.5;
+    }
+
+    #content-area {
+        padding: 1rem;
+    }
+
+    .top-bar {
+        padding: 0.75rem 1rem;
+    }
+
+    .search-box {
+        display: none;
+        /* Hide search box on very small screens to save space */
+    }
+}
+
+@media (max-width: 640px) {
+
+    .dashboard-grid,
+    .tracker-grid,
+    .comparison-grid,
+    .sim-result-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .portfolio-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .portfolio-form .form-group {
+        width: 100%;
+    }
+
+    .summary-card .price {
+        font-size: 1.5rem;
+    }
+}
+
+.mobile-menu-trigger,
+.mobile-close {
+    display: none;
 }
 
 /* Portfolio Form Styles */

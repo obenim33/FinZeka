@@ -185,6 +185,12 @@ function handleLogout() {
     auth.signOut();
 }
 
+// --- Mobile Sidebar Logic ---
+function toggleMobileSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    sidebar.classList.toggle('mobile-active');
+}
+
 // --- Auth Observer ---
 if (auth) {
     auth.onAuthStateChanged(async (user) => {
@@ -910,6 +916,13 @@ function loadModule(moduleName) {
 
     // Render appropriate module
     contentArea.innerHTML = ''; // Clear content area before rendering
+
+    // Close mobile sidebar after navigation
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar.classList.contains('mobile-active')) {
+        sidebar.classList.remove('mobile-active');
+    }
+
     switch (moduleName) {
         case 'dashboard':
             renderDashboard();
