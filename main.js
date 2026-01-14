@@ -12,25 +12,32 @@ const firebaseConfig = {
 let auth = null, db = null;
 let isSimulationMode = false;
 
-if (typeof firebase !== 'undefined' && firebaseConfig.apiKey !== "AIzaSyB_REPLACE_WITH_YOUR_KEY") {
+// Robust check for placeholder or missing API Key
+const isPlaceholderKey = !firebaseConfig.apiKey ||
+    firebaseConfig.apiKey.includes('REPLACE') ||
+    firebaseConfig.apiKey.length < 20;
+
+if (typeof firebase !== 'undefined' && !isPlaceholderKey) {
     try {
         firebase.initializeApp(firebaseConfig);
         auth = firebase.auth();
         db = firebase.firestore();
     } catch (e) {
-        console.warn("Firebase başlatılamadı, Simülasyon moduna geçiliyor.");
         isSimulationMode = true;
     }
 } else {
     isSimulationMode = true;
-    console.log("Simülasyon Modu: Gerçek bir Firebase API key girilmediği için veriler yerel kaydedilecek.");
+}
+
+if (isSimulationMode) {
+    console.log("FinZeka: Simülasyon Modu Aktif (Yerel Kayıt)");
 }
 
 // User Session State
 let currentUser = null;
 
-// --- Mock/Simulation Auth (To avoid errors when no API key) ---
-if (isSimulationMode) {
+// --- Mock/Simulation Auth Logic ---
+function setupSimAuth() {
     auth = {
         onAuthStateChanged: (callback) => {
             const savedUser = localStorage.getItem('finzeka_sim_user');
@@ -44,9 +51,9 @@ if (isSimulationMode) {
         signInWithEmailAndPassword: async (email, password) => {
             const users = JSON.parse(localStorage.getItem('finzeka_sim_db') || '{}');
             if (users[email] && users[email].password === password) {
-                currentUser = { uid: email.replace('.', '_'), email, displayName: users[email].name };
+                currentUser = { uid: email.replace('.', '_'), email, displayName: users[email].name || 'Kullanıcı' };
                 localStorage.setItem('finzeka_sim_user', JSON.stringify(currentUser));
-                location.reload(); // Refresh to trigger state
+                location.reload();
                 return { user: currentUser };
             }
             throw new Error("Hatalı e-posta veya şifre.");
@@ -65,6 +72,10 @@ if (isSimulationMode) {
             location.reload();
         }
     };
+}
+
+if (isSimulationMode) {
+    setupSimAuth();
 }
 
 // --- Data Layer (Unified Storage) ---
@@ -139,18 +150,28 @@ async function handleAuth(e) {
 
     try {
         if (isSimulationMode) {
-            if (isRegister) {
-                await auth.createUserWithEmailAndPassword(email, password);
-                // Simulation mode handles reload
-            } else {
-                await auth.signInWithEmailAndPassword(email, password);
-            }
+            if (isRegister) await auth.createUserWithEmailAndPassword(email, password);
+            else await auth.signInWithEmailAndPassword(email, password);
         } else {
-            if (isRegister) {
-                const res = await auth.createUserWithEmailAndPassword(email, password);
-                await res.user.updateProfile({ displayName: name || 'FinZeka Kullanıcısı' });
-            } else {
-                await auth.signInWithEmailAndPassword(email, password);
+            try {
+                if (isRegister) {
+                    const res = await auth.createUserWithEmailAndPassword(email, password);
+                    await res.user.updateProfile({ displayName: name || 'FinZeka Kullanıcısı' });
+                } else {
+                    await auth.signInWithEmailAndPassword(email, password);
+                }
+            } catch (fbErr) {
+                // If real Firebase fails specifically with API Key error, force simulation for this session
+                if (fbErr.code === 'auth/api-key-not-valid' || fbErr.message.includes('api-key')) {
+                    console.warn("Geçersiz API Anahtarı saptandı. Simülasyona geçiliyor...");
+                    isSimulationMode = true;
+                    // Trigger simulation auth immediately
+                    setupSimAuth();
+                    if (isRegister) await auth.createUserWithEmailAndPassword(email, password);
+                    else await auth.signInWithEmailAndPassword(email, password);
+                    return;
+                }
+                throw fbErr; // Rethrow if it's another type of error
             }
         }
         closeAuthModal();
@@ -175,7 +196,8 @@ if (auth) {
 
         if (user) {
             nameEl.innerText = user.displayName || 'Kullanıcı';
-            statusEl.innerText = 'Aktif Üye';
+            statusEl.innerText = isSimulationMode ? 'Aktif Üye (Sim)' : 'Aktif Üye';
+            statusEl.style.color = isSimulationMode ? 'var(--warning-color)' : 'var(--success-color)';
             statusEl.onclick = null;
             avatarEl.innerText = (user.displayName || 'U').charAt(0).toUpperCase();
             logoutBtn.style.display = 'block';
