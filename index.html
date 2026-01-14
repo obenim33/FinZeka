@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Intelligence | Armada Gıda</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="index.css">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Firebase SDKs (v9 Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar glass-panel">
+            <div class="logo-area">
+                <i class="fa-solid fa-chart-line fa-2x"></i>
+                <h1>FİN<span class="highlight">ZEKA</span></h1>
+            </div>
+
+            <ul class="nav-links">
+                <li class="active" data-module="dashboard">
+                    <i class="fa-solid fa-grid-2"></i>
+                    <span>Genel Bakış</span>
+                </li>
+                <li data-module="prediction">
+                    <i class="fa-solid fa-crystal-ball"></i>
+                    <span>AI Tahmin</span>
+                </li>
+                <li data-module="news">
+                    <i class="fa-solid fa-newspaper"></i>
+                    <span>Haber Analizi</span>
+                </li>
+                <li data-module="portfolio">
+                    <i class="fa-solid fa-briefcase"></i>
+                    <span>Portföy</span>
+                </li>
+                <li data-module="simulation">
+                    <i class="fa-solid fa-calculator"></i>
+                    <span>Simülasyon</span>
+                </li>
+                <li data-module="compare">
+                    <i class="fa-solid fa-scale-balanced"></i>
+                    <span>Karşılaştırma</span>
+                </li>
+            </ul>
+
+            <div class="user-profile" id="user-profile-section">
+                <!-- Logged in state injected by JS -->
+                <div class="avatar" id="user-avatar">?</div>
+                <div class="user-info">
+                    <span class="name" id="user-display-name">Misafir</span>
+                    <span class="role" id="user-status" style="cursor:pointer;" onclick="showLoginModal()">Giriş
+                        Yap</span>
+                </div>
+                <button id="logout-btn" class="icon-btn" style="display:none;" onclick="handleLogout()"
+                    title="Çıkış Yap">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-bar glass-panel">
+                <h2 id="page-title">Piyasa Özeti</h2>
+                <div class="actions">
+                    <div class="search-box">
+                        <i class="fa-solid fa-search"></i>
+                        <input type="text" id="asset-search-input" placeholder="Varlık veya haber ara (örn: Gümüş)...">
+                    </div>
+                    <button class="icon-btn"><i class="fa-regular fa-bell"></i></button>
+                    <button class="icon-btn"><i class="fa-solid fa-gear"></i></button>
+                </div>
+            </header>
+
+            <div id="content-area" class="content-grid">
+                <!-- Modules will be injected here by JS -->
+
+                <!-- Welcome / Dashboard View (Default) -->
+                <div class="dashboard-grid">
+                    <div class="card glass-panel summary-card">
+                        <h3>Gold (XAU/USD)</h3>
+                        <div class="price">$2,024.50</div>
+                        <div class="change positive">+1.24%</div>
+                        <div class="trend-sparkline"></div>
+                    </div>
+                    <div class="card glass-panel summary-card">
+                        <h3>USD/TRY</h3>
+                        <div class="price">30.15</div>
+                        <div class="change neutral">+0.05%</div>
+                        <div class="trend-sparkline"></div>
+                    </div>
+                    <div class="card glass-panel summary-card">
+                        <h3>Bitcoin (BTC)</h3>
+                        <div class="price">$42,300</div>
+                        <div class="change negative">-2.10%</div>
+                        <div class="trend-sparkline"></div>
+                    </div>
+                    <div class="card glass-panel summary-card">
+                        <h3>Brent Oil</h3>
+                        <div class="price">$78.20</div>
+                        <div class="change positive">+0.80%</div>
+                        <div class="trend-sparkline"></div>
+                    </div>
+
+                    <!-- Quick Access to Modules -->
+                    <div class="card glass-panel feature-card" onclick="loadModule('prediction')">
+                        <div class="icon-bg"><i class="fa-solid fa-arrow-trend-up"></i></div>
+                        <h3>AI Tahmin</h3>
+                        <p>Yapay zeka analizli 30 günlük fiyat tahminleri.</p>
+                    </div>
+                    <div class="card glass-panel feature-card" onclick="loadModule('news')">
+                        <div class="icon-bg"><i class="fa-solid fa-globe"></i></div>
+                        <h3>Küresel Haberler</h3>
+                        <p>Duygu analizi ve etki değerlendirmesi.</p>
+                    </div>
+                    <div class="card glass-panel feature-card" onclick="loadModule('portfolio')">
+                        <div class="icon-bg"><i class="fa-solid fa-chart-pie"></i></div>
+                        <h3>Portföy Sağlığı</h3>
+                        <p>Risk puanlaması ve yeniden dengeleme önerileri.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Auth Modal Overlay -->
+    <div id="auth-modal" class="modal-overlay">
+        <div class="modal-content glass-panel auth-card">
+            <div class="auth-tabs">
+                <button id="tab-login" class="auth-tab active" onclick="toggleAuthTab('login')">Giriş Yap</button>
+                <button id="tab-register" class="auth-tab" onclick="toggleAuthTab('register')">Kayıt Ol</button>
+            </div>
+
+            <form id="auth-form" onsubmit="handleAuth(event)">
+                <div class="form-group">
+                    <label>E-posta</label>
+                    <input type="email" id="auth-email" required placeholder="ornek@mail.com">
+                </div>
+                <div class="form-group">
+                    <label>Şifre</label>
+                    <input type="password" id="auth-password" required placeholder="••••••••">
+                </div>
+                <div id="auth-name-group" class="form-group" style="display:none;">
+                    <label>Ad Soyad</label>
+                    <input type="text" id="auth-name" placeholder="Tahsin Şahin">
+                </div>
+                <div id="auth-error" class="error-msg"></div>
+                <button type="submit" class="primary-btn auth-submit">Devam Et</button>
+            </form>
+            <button class="close-modal" onclick="closeAuthModal()">&times;</button>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+
+</html>
