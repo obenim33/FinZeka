@@ -8,16 +8,64 @@ const firebaseConfig = {
     appId: "1:123456789:web:abcdef"
 };
 
-// Initialize Firebase (Safely checks if script loaded)
+// Initialize Firebase (Safely checks if script loaded and API key is provided)
 let auth = null, db = null;
-if (typeof firebase !== 'undefined') {
-    firebase.initializeApp(firebaseConfig);
-    auth = firebase.auth();
-    db = firebase.firestore();
+let isSimulationMode = false;
+
+if (typeof firebase !== 'undefined' && firebaseConfig.apiKey !== "AIzaSyB_REPLACE_WITH_YOUR_KEY") {
+    try {
+        firebase.initializeApp(firebaseConfig);
+        auth = firebase.auth();
+        db = firebase.firestore();
+    } catch (e) {
+        console.warn("Firebase başlatılamadı, Simülasyon moduna geçiliyor.");
+        isSimulationMode = true;
+    }
+} else {
+    isSimulationMode = true;
+    console.log("Simülasyon Modu: Gerçek bir Firebase API key girilmediği için veriler yerel kaydedilecek.");
 }
 
 // User Session State
 let currentUser = null;
+
+// --- Mock/Simulation Auth (To avoid errors when no API key) ---
+if (isSimulationMode) {
+    auth = {
+        onAuthStateChanged: (callback) => {
+            const savedUser = localStorage.getItem('finzeka_sim_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                callback(currentUser);
+            } else {
+                callback(null);
+            }
+        },
+        signInWithEmailAndPassword: async (email, password) => {
+            const users = JSON.parse(localStorage.getItem('finzeka_sim_db') || '{}');
+            if (users[email] && users[email].password === password) {
+                currentUser = { uid: email.replace('.', '_'), email, displayName: users[email].name };
+                localStorage.setItem('finzeka_sim_user', JSON.stringify(currentUser));
+                location.reload(); // Refresh to trigger state
+                return { user: currentUser };
+            }
+            throw new Error("Hatalı e-posta veya şifre.");
+        },
+        createUserWithEmailAndPassword: async (email, password) => {
+            const users = JSON.parse(localStorage.getItem('finzeka_sim_db') || '{}');
+            users[email] = { password, name: 'Yeni Kullanıcı' };
+            localStorage.setItem('finzeka_sim_db', JSON.stringify(users));
+            currentUser = { uid: email.replace('.', '_'), email, displayName: 'Yeni Kullanıcı' };
+            localStorage.setItem('finzeka_sim_user', JSON.stringify(currentUser));
+            location.reload();
+            return { user: currentUser };
+        },
+        signOut: async () => {
+            localStorage.removeItem('finzeka_sim_user');
+            location.reload();
+        }
+    };
+}
 
 // --- Data Layer (Unified Storage) ---
 const DataStore = {
@@ -90,11 +138,20 @@ async function handleAuth(e) {
     const errorEl = document.getElementById('auth-error');
 
     try {
-        if (isRegister) {
-            const res = await auth.createUserWithEmailAndPassword(email, password);
-            await res.user.updateProfile({ displayName: name || 'FinZeka Kullanıcısı' });
+        if (isSimulationMode) {
+            if (isRegister) {
+                await auth.createUserWithEmailAndPassword(email, password);
+                // Simulation mode handles reload
+            } else {
+                await auth.signInWithEmailAndPassword(email, password);
+            }
         } else {
-            await auth.signInWithEmailAndPassword(email, password);
+            if (isRegister) {
+                const res = await auth.createUserWithEmailAndPassword(email, password);
+                await res.user.updateProfile({ displayName: name || 'FinZeka Kullanıcısı' });
+            } else {
+                await auth.signInWithEmailAndPassword(email, password);
+            }
         }
         closeAuthModal();
     } catch (err) {
